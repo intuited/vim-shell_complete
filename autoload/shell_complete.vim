@@ -32,9 +32,12 @@ function! shell_complete#IsRelPath(path)
   return a:path =~ '^\.\{1,2}' . escape(shell_complete#pathsep, '\')
 endfunction
 
+" Assert an absence of an odd number of '\' characters behind what follows.
+let shell_complete#unescaped = '\m\(\(\\\\\)*\\\)\@<!'
+
 " Splits a:line on unescaped occurrences of a:target.
 function! shell_complete#SplitOnUnescaped(target, line)
-  let re = '\m\(\(\\\\\)*\\\)\@<!' . a:target
+  let re = shell_complete#unescaped . a:target
   return split(a:line, re)
 endfunction
 
@@ -61,10 +64,11 @@ function! shell_complete#MakeVimPath(syspath)
 endfunction
 
 " Transform a partial command into a glob expression.
+" Only adds an asterisk if the command
 function! shell_complete#AppendStar(expr)
-  if len(a:expr) = 0
+  if len(a:expr) == 0
     return '*'
-  elseif a:expr[len(a:expr) - 1] != '*'
+  elseif a:expr !~ shell_complete#unescaped . '\*$'
     return expr . '*'
   endif
 endfunction
