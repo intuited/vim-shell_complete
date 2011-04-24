@@ -32,12 +32,13 @@ function! shell_complete#IsRelPath(path)
   return a:path =~ '^\.\{1,2}' . escape(shell_complete#pathsep, '\')
 endfunction
 
-" Assert an absence of an odd number of '\' characters behind what follows.
-let shell_complete#unescaped = '\m\(\(\\\\\)*\\\)\@<!'
+" Assert the presence of an even number (including 0) of '\' characters
+" before what follows.
+let shell_complete#unescaped = '\m\(\\\@<!\(\\\\\)*\)\@<='
 
 " Splits a:line on unescaped occurrences of a:target.
 function! shell_complete#SplitOnUnescaped(target, line)
-  let re = shell_complete#unescaped . a:target
+  let re = g:shell_complete#unescaped . a:target
   return split(a:line, re)
 endfunction
 
@@ -58,7 +59,7 @@ endfunction
 
 " Makes a comma-delimited path from a system path.
 function! shell_complete#MakeVimPath(syspath)
-  let paths = shell_complete#SplitOnUnescaped(shell_complete#pathdelim)
+  let paths = shell_complete#SplitOnUnescaped(shell_complete#pathdelim, a:syspath)
   let paths = map(paths, 'escape(v:val, '','')')
   return join(paths, ',')
 endfunction
@@ -68,14 +69,16 @@ endfunction
 function! shell_complete#AppendStar(expr)
   if len(a:expr) == 0
     return '*'
-  elseif a:expr !~ shell_complete#unescaped . '\*$'
-    return expr . '*'
+  elseif a:expr !~ g:shell_complete#unescaped . '\*$'
+    return a:expr . '*'
+  else
+    return a:expr
   endif
 endfunction
 
 function! shell_complete#Unique(strings)
   let d = {}
-  for s in strings
+  for s in a:strings
     let d[s] = 1
   endfor
   return keys(d)
@@ -86,7 +89,7 @@ endfunction
 function! shell_complete#CompleteCommand(partialCommand)
   if shell_complete#IsAbsPath(a:partialCommand) ||
         \ shell_complete#IsRelPath(a:partialCommand)
-    let expr = shell_complete#AppendStar(partialCommand)
+    let expr = shell_complete#AppendStar(a:partialCommand)
     return split(glob(expr), "\n")
   else
     let path = shell_complete#MakeVimPath($PATH)
@@ -101,9 +104,9 @@ function! shell_complete#Complete(argLead, cmdLine, cursorPos)
   let partial = a:cmdLine[0 : a:cursorPos - 1]
   let partialArgs = shell_complete#SplitArgs(partial)
   if len(partialArgs) == 0 ||
-        \ (len(partialArgs) == 1 && cmdLine[cursorPos] =~ '\S')
-    return shell_complete#CompleteCommand(argLead)
+        \ (len(partialArgs) == 1 && a:cmdLine[a:cursorPos] =~ '\S')
+    return shell_complete#CompleteCommand(a:argLead)
   else
-    return shell_complete#CompleteFilename(argLead)
+    return shell_complete#CompleteFilename(a:argLead)
   endif
 endfunction
