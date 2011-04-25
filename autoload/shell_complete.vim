@@ -62,12 +62,12 @@ function! shell_complete#SplitOnUnescaped(line, target)
   return split(a:line, re)
 endfunction
 
-" Unescapes the backslash-escaped characters `a:chars` in `a:text`.
+" Unescapes the members of the RE collection `a:coll` in `a:text`.
 " Escaping on backslash-escaped backslashes is halved.
 " Character classes and other escape sequences can be used in `a:text`.
-function! shell_complete#Unescape(text, chars)
+function! shell_complete#Unescape(text, coll)
   let re = '\m\\\@<!\%(\(\\*\)\1\)'
-        \ .'\%(\\\([' . escape(a:chars, '[]') . ']\)\)\?'
+        \ .'\%(\\\([' . escape(a:coll, '[]') . ']\)\)\?'
   return substitute(a:text, re, '\1\2', 'g')
 endfunction
 
