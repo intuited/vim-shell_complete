@@ -110,8 +110,8 @@ endfunction
 " Lists commands which start with a:partialCommand.
 " This is analogous to `expand_shellcmd` in vim's `src/ex_getln.c`.
 function! shell_complete#CompleteCommand(partialCommand)
-  if shell_complete#IsAbsPath(a:partialCommand) ||
-        \ shell_complete#IsRelPath(a:partialCommand)
+  if s:path.IsAbsPath(a:partialCommand) ||
+        \ s:path.IsRelPath(a:partialCommand)
     let expr = shell_complete#AppendStar(a:partialCommand)
     return split(glob(expr), "\n")
   else
