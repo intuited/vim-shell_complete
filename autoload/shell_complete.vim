@@ -43,8 +43,8 @@ let s:path = shell_complete#path
 
   " Makes a comma-delimited path from a system path.
   function! s:path.MakeVimPath(syspath)
-    let paths = shell_complete#SplitOnUnescaped(self.pathdelim,
-          \                                     a:syspath)
+    let paths = shell_complete#SplitOnUnescaped(a:syspath,
+          \                                     self.pathdelim)
     let paths = map(paths, 'shell_complete#Unescape(v:val, self.pathdelim)')
     let paths = map(paths, 'escape(v:val, '','')')
     return join(paths, ',')
@@ -57,7 +57,7 @@ call s:path.Init()
 let shell_complete#unescaped = '\m\(\\\@<!\(\\\\\)*\)\@<='
 
 " Splits a:line on unescaped occurrences of a:target.
-function! shell_complete#SplitOnUnescaped(target, line)
+function! shell_complete#SplitOnUnescaped(line, target)
   let re = g:shell_complete#unescaped . a:target
   return split(a:line, re)
 endfunction
@@ -82,7 +82,7 @@ endfunction
 " Return: a List of the arguments in the String a:line.
 function! shell_complete#SplitArgs(line)
   " Split at any series of spaces not preceded by an uneven number of \'s
-  return shell_complete#SplitOnUnescaped('\s\+', a:line)
+  return shell_complete#SplitOnUnescaped(a:line, '\s\+')
 endfunction
 
 
