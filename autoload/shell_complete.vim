@@ -38,7 +38,7 @@ let s:path = shell_complete#path
   endfunction
 
   function! s:path.IsRelPath(path)
-    return a:path =~ '^\.\{1,2}' . escape(shell_complete#pathsep, '\')
+    return a:path =~ '^\.\{1,2}\V' . escape(shell_complete#pathsep, '\')
   endfunction
 
   " Makes a comma-delimited path from a system path.
