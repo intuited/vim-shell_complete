@@ -43,8 +43,9 @@ let s:path = shell_complete#path
 
   " Makes a comma-delimited path from a system path.
   function! s:path.MakeVimPath(syspath)
-    let paths = shell_complete#SplitOnUnescaped(g:shell_complete#pathdelim,
+    let paths = shell_complete#SplitOnUnescaped(self.pathdelim,
           \                                     a:syspath)
+    let paths = map(paths, 'shell_complete#Unescape(v:val, self.pathdelim)')
     let paths = map(paths, 'escape(v:val, '','')')
     return join(paths, ',')
   endfunction
@@ -59,6 +60,15 @@ let shell_complete#unescaped = '\m\(\\\@<!\(\\\\\)*\)\@<='
 function! shell_complete#SplitOnUnescaped(target, line)
   let re = g:shell_complete#unescaped . a:target
   return split(a:line, re)
+endfunction
+
+" Unescapes the backslash-escaped characters `a:chars` in `a:text`.
+" Escaping on backslash-escaped backslashes is halved.
+" Character classes and other escape sequences can be used in `a:text`.
+function! shell_complete#Unescape(text, chars)
+  let re = '\m\\\@<!\%(\(\\*\)\1\)'
+        \ .'\%(\\\([' . escape(a:chars, '[]') . ']\)\)\?'
+  return substitute(a:text, re, '\1\2', 'g')
 endfunction
 
 " Splits the command line, respecting escaping.

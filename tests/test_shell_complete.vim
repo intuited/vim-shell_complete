@@ -48,6 +48,8 @@ function! s:TestMakeVimPathsWin()
   let path.UseWindowsPaths = s:vals.True
   call path.Init()
 
+  PrettyPrint path
+
   Assert path.MakeVimPath('one') == 'one'
   Assert path.MakeVimPath('one;two;three') == 'one,two,three'
   Assert path.MakeVimPath('o,n,e;two;three') == 'o\,n\,e,two,three'
@@ -64,4 +66,16 @@ function! s:TestMakeVimPathsNonWin()
   Assert path.MakeVimPath('one:two:three') == 'one,two,three'
   Assert path.MakeVimPath('o\:n\:e:two') == 'o:n:e,two'
   Assert path.MakeVimPath('o,n,e:two:three') == 'o\,n\,e,two,three'
+endfunction
+
+function! s:TestUnescape()
+  Comment 'Test the unescape function.'
+  Assert shell_complete#Unescape('t', 't') == 't'
+  Assert shell_complete#Unescape('\t', 't') == 't'
+  Assert shell_complete#Unescape('\t\t', 't') == 'tt'
+  Assert shell_complete#Unescape('\\t', 't') == '\t'
+  Assert shell_complete#Unescape('\\\t', 't') == '\t'
+  Assert shell_complete#Unescape('\\\\t', 't') == '\\t'
+  Assert shell_complete#Unescape('t\\\\t', 't') == 't\\t'
+  Assert shell_complete#Unescape('\\\\', 't') == '\\'
 endfunction
