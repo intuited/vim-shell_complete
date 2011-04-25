@@ -83,7 +83,7 @@ endfunction
 function! shell_complete#SplitArgs(line)
   " Split at any series of spaces not preceded by an uneven number of \'s
   let args = shell_complete#SplitOnUnescaped(a:line, '\s\+')
-  return map(args, 'shell_complete#Unescape(v:val, "\s")')
+  return map(args, 'shell_complete#Unescape(v:val, '' \t'')')
 endfunction
 
 

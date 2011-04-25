@@ -26,11 +26,11 @@ endfunction
 
 function! s:TestSplitOnUnescaped()
   Comment 'Test splitting on unescaped characters.'
-  Assert shell_complete#SplitOnUnescaped('D', 'abcDefg') == ['abc', 'efg']
-  Assert shell_complete#SplitOnUnescaped('D', 'abc\Defg') == ['abc\Defg']
-  Assert shell_complete#SplitOnUnescaped('D', 'abc\\Defg') == ['abc\\', 'efg']
-  Assert shell_complete#SplitOnUnescaped('D', 'abc\\\Defg') == ['abc\\\Defg']
-  Assert shell_complete#SplitOnUnescaped('D', 'abc\\\\Defg') == ['abc\\\\', 'efg']
+  Assert shell_complete#SplitOnUnescaped('abcDefg', 'D') == ['abc', 'efg']
+  Assert shell_complete#SplitOnUnescaped('abc\Defg', 'D') == ['abc\Defg']
+  Assert shell_complete#SplitOnUnescaped('abc\\Defg', 'D') == ['abc\\', 'efg']
+  Assert shell_complete#SplitOnUnescaped('abc\\\Defg', 'D') == ['abc\\\Defg']
+  Assert shell_complete#SplitOnUnescaped('abc\\\\Defg', 'D') == ['abc\\\\', 'efg']
 endfunction
 
 let s:vals = {}
@@ -78,4 +78,35 @@ function! s:TestUnescape()
   Assert shell_complete#Unescape('\\\\t', 't') == '\\t'
   Assert shell_complete#Unescape('t\\\\t', 't') == 't\\t'
   Assert shell_complete#Unescape('\\\\', 't') == '\\'
+endfunction
+
+function! s:TestSplitArgs()
+  Comment 'Test argument splitting.'
+  Assert shell_complete#SplitArgs('one two') == ['one', 'two']
+  Assert shell_complete#SplitArgs('one  two') == ['one', 'two']
+  Assert shell_complete#SplitArgs("one\ttwo") == ['one', 'two']
+  Assert shell_complete#SplitArgs("one \ttwo") == ['one', 'two']
+  Assert shell_complete#SplitArgs('one two three') == ['one', 'two', 'three']
+  Assert shell_complete#SplitArgs('one') == ['one']
+  Assert shell_complete#SplitArgs('one\ two') == ['one two']
+  Assert shell_complete#SplitArgs('one\\ two') == ['one\', 'two']
+  Assert shell_complete#SplitArgs('one\\\ two') == ['one\ two']
+  Assert shell_complete#SplitArgs('one\\\\ two') == ['one\\', 'two']
+  Assert shell_complete#SplitArgs('') == []
+  Assert shell_complete#SplitArgs(' ') == []
+endfunction
+
+function! s:TestUnique()
+  Comment 'Test the Unique function.'
+  Assert sort(shell_complete#Unique(['1', '2', '3'])) == ['1', '2', '3']
+  Assert sort(shell_complete#Unique(['1', '2', '1'])) == ['1', '2']
+  Assert sort(shell_complete#Unique(['1', '2', '2'])) == ['1', '2']
+  Assert sort(shell_complete#Unique(['1', '1', '1'])) == ['1']
+  Assert sort(shell_complete#Unique([])) == []
+  Assert sort(shell_complete#Unique(['1'])) == ['1']
+  " This happens because Unique typecasts the values to Strings.
+  " This is so that they can be used as Dictionary keys.
+  " This is really not ideal, but allows the thing to be done more quickly.
+  Assert sort(shell_complete#Unique(['1', '2', 2])) == ['1', '2']
+  " TODO: Add tests which pass parameters of different types (Dict, List).
 endfunction
