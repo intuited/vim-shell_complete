@@ -5,32 +5,51 @@
 " The author has attempted to provide cross-platform compatibility,
 " but the addon has not been tested on systems other than linux.
 
-" Platform-specific functionality.
-" Figure out whether ':' or ';' is the path delimiter.
-" This is (roughly) how it's done by vim
-" in `src/ex_getln.c`, function `expand_shellcmd`.
-" Also define the path separator as '/' or '\'
-" and declare a function to test whether or not a path is absolute.
-" TODO: Find out if there's a better way to do this.
-"       Ideally it would be possible to use vim's internal C functions.
-if has('os2') || has('dos32') || has('dos16') ||
-      \ has('gui_win32') || has('gui_win32s')
-  let shell_complete#pathdelim = ';'
-  let shell_complete#pathsep = '\'
-  function! shell_complete#IsAbsPath(path)
-    return a:path =~ '^\a:[/\\]' || a:path =~ '^[/\\]\{2}'
-  endfunction
-else
-  let shell_complete#pathdelim = ':'
-  let shell_complete#pathsep = '/'
-  function! shell_complete#IsAbsPath(path)
-    return a:path[0] == '/'
-  endfunction
-endif
+" Platform-specific path functionality.
+let shell_complete#path = {}
+let s:path = shell_complete#path
 
-function! shell_complete#IsRelPath(path)
-  return a:path =~ '^\.\{1,2}' . escape(shell_complete#pathsep, '\')
-endfunction
+  " This is (roughly) how it's done by vim
+  " in `src/ex_getln.c`, function `expand_shellcmd`.
+  function! s:path.UseWindowsPaths()
+    return has('os2') || has('dos32') || has('dos16') ||
+          \ has('gui_win32') || has('gui_win32s')
+  endfunction
+
+  " Figure out whether ':' or ';' is the path delimiter.
+  " Also define the path separator as '/' or '\'
+  " and declare a function to test whether or not a path is absolute.
+  " TODO: Find out if there's a better way to do this.
+  "       Ideally it would be possible to use vim's internal C functions.
+  function! s:path.Init()
+    if self.UseWindowsPaths()
+      let self.pathdelim = ';'
+      let self.pathsep = '\'
+      function! self.IsAbsPath(path)
+        return a:path =~ '^\a:[/\\]' || a:path =~ '^[/\\]\{2}'
+      endfunction
+    else
+      let self.pathdelim = ':'
+      let self.pathsep = '/'
+      function! self.IsAbsPath(path)
+        return a:path[0] == '/'
+      endfunction
+    endif
+  endfunction
+
+  function! s:path.IsRelPath(path)
+    return a:path =~ '^\.\{1,2}' . escape(shell_complete#pathsep, '\')
+  endfunction
+
+  " Makes a comma-delimited path from a system path.
+  function! s:path.MakeVimPath(syspath)
+    let paths = shell_complete#SplitOnUnescaped(g:shell_complete#pathdelim,
+          \                                     a:syspath)
+    let paths = map(paths, 'escape(v:val, '','')')
+    return join(paths, ',')
+  endfunction
+
+call s:path.Init()
 
 " Assert the presence of an even number (including 0) of '\' characters
 " before what follows.
@@ -56,13 +75,6 @@ function! shell_complete#SplitArgs(line)
   return shell_complete#SplitOnUnescaped('\s\+', a:line)
 endfunction
 
-
-" Makes a comma-delimited path from a system path.
-function! shell_complete#MakeVimPath(syspath)
-  let paths = shell_complete#SplitOnUnescaped(shell_complete#pathdelim, a:syspath)
-  let paths = map(paths, 'escape(v:val, '','')')
-  return join(paths, ',')
-endfunction
 
 " Transform a partial command into a glob expression.
 " Only adds an asterisk if the command
@@ -92,7 +104,7 @@ function! shell_complete#CompleteCommand(partialCommand)
     let expr = shell_complete#AppendStar(a:partialCommand)
     return split(glob(expr), "\n")
   else
-    let path = shell_complete#MakeVimPath($PATH)
+    let path = s:path.MakeVimPath($PATH)
     let expr = shell_complete#AppendStar(a:partialCommand)
     let matchedFiles = split(globpath(path, expr), "\n")
     let baseFiles = map(matchedFiles, 'split(v:val, shell_complete#pathsep)[-1]')
