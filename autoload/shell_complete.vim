@@ -38,7 +38,7 @@ let s:path = shell_complete#path
   endfunction
 
   function! s:path.IsRelPath(path)
-    return a:path =~ '^\.\{1,2}\V' . escape(shell_complete#pathsep, '\')
+    return a:path =~ '^\.\{1,2}\V' . escape(s:path.pathsep, '\')
   endfunction
 
   " Makes a comma-delimited path from a system path.
@@ -118,8 +118,9 @@ function! shell_complete#CompleteCommand(partialCommand)
     let path = s:path.MakeVimPath($PATH)
     let expr = shell_complete#AppendStar(a:partialCommand)
     let matchedFiles = split(globpath(path, expr), "\n")
-    let baseFiles = map(matchedFiles, 'split(v:val, shell_complete#pathsep)[-1]')
-    return sort(shell_complete#unique(baseFiles))
+    let executables = filter(matchedFiles, 'executable(v:val) == 1')
+    let baseFiles = map(executables, 'split(v:val, s:path.pathsep)[-1]')
+    return sort(shell_complete#Unique(baseFiles))
   endif
 endfunction
 
