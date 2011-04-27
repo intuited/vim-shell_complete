@@ -1,0 +1,15 @@
+{ "name": "shell_complete",
+  "version": "0.1",
+  "author": "Ted Tibbetts",
+  "description": "Provides completion functions which complete in a manner similar to |:!|.",
+  "dependencies": {
+    "path": {
+      "type": "git",
+      "url": "http://github.com/intuited/vim-path.git"
+    },
+    "escape": {
+      "type": "git",
+      "url": "http://github.com/intuited/vim-escape.git"
+    }
+  }
+}

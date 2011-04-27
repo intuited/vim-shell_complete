@@ -5,72 +5,6 @@
 " The author has attempted to provide cross-platform compatibility,
 " but the addon has not been tested on systems other than linux.
 
-" Platform-specific path functionality.
-let shell_complete#path = {}
-let s:path = shell_complete#path
-
-  " This is (roughly) how it's done by vim
-  " in `src/ex_getln.c`, function `expand_shellcmd`.
-  function! s:path.UseWindowsPaths()
-    return has('os2') || has('dos32') || has('dos16') ||
-          \ has('gui_win32') || has('gui_win32s')
-  endfunction
-
-  " Figure out whether ':' or ';' is the path delimiter.
-  " Also define the path separator as '/' or '\'
-  " and declare a function to test whether or not a path is absolute.
-  " TODO: Find out if there's a better way to do this.
-  "       Ideally it would be possible to use vim's internal C functions.
-  function! s:path.Init()
-    if self.UseWindowsPaths()
-      let self.pathdelim = ';'
-      let self.pathsep = '\'
-      function! self.IsAbsPath(path)
-        return a:path =~ '^\a:[/\\]' || a:path =~ '^[/\\]\{2}'
-      endfunction
-    else
-      let self.pathdelim = ':'
-      let self.pathsep = '/'
-      function! self.IsAbsPath(path)
-        return a:path[0] == '/'
-      endfunction
-    endif
-  endfunction
-
-  function! s:path.IsRelPath(path)
-    return a:path =~ '^\.\{1,2}\V' . escape(s:path.pathsep, '\')
-  endfunction
-
-  " Makes a comma-delimited path from a system path.
-  function! s:path.MakeVimPath(syspath)
-    let paths = shell_complete#SplitOnUnescaped(a:syspath,
-          \                                     self.pathdelim)
-    let paths = map(paths, 'shell_complete#Unescape(v:val, self.pathdelim)')
-    let paths = map(paths, 'escape(v:val, '','')')
-    return join(paths, ',')
-  endfunction
-
-call s:path.Init()
-
-" Assert the presence of an even number (including 0) of '\' characters
-" before what follows.
-let shell_complete#unescaped = '\m\(\\\@<!\(\\\\\)*\)\@<='
-
-" Splits a:line on unescaped occurrences of a:target.
-function! shell_complete#SplitOnUnescaped(line, target)
-  let re = g:shell_complete#unescaped . a:target
-  return split(a:line, re)
-endfunction
-
-" Unescapes the members of the RE collection `a:coll` in `a:text`.
-" Escaping on backslash-escaped backslashes is halved.
-" Character classes and other escape sequences can be used in `a:text`.
-function! shell_complete#Unescape(text, coll)
-  let re = '\m\\\@<!\%(\(\\*\)\1\)'
-        \ .'\%(\\\([' . escape(a:coll, '[]') . ']\)\)\?'
-  return substitute(a:text, re, '\1\2', 'g')
-endfunction
-
 " Splits the command line, respecting escaping.
 " This is an inherently flawed way of doing this,
 " since it should really be done by the shell that will handle the command.
@@ -82,8 +16,8 @@ endfunction
 " Return: a List of the arguments in the String a:line.
 function! shell_complete#SplitArgs(line)
   " Split at any series of spaces not preceded by an uneven number of \'s
-  let args = shell_complete#SplitOnUnescaped(a:line, '\s\+')
-  return map(args, 'shell_complete#Unescape(v:val, '' \t'')')
+  let args = escape#SplitOnUnescaped(a:line, '\s\+')
+  return map(args, 'escape#Unescape(v:val, '' \t'')')
 endfunction
 
 
@@ -92,7 +26,7 @@ endfunction
 function! shell_complete#AppendStar(expr)
   if len(a:expr) == 0
     return '*'
-  elseif a:expr !~ g:shell_complete#unescaped . '\*$'
+  elseif a:expr !~ g:escape#unescaped . '\*$'
     return a:expr . '*'
   else
     return a:expr
