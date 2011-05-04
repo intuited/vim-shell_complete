@@ -5,6 +5,9 @@
 " The author has attempted to provide cross-platform compatibility,
 " but the addon has not been tested on systems other than linux.
 
+" TODO: Find out how escaping should work on Windows.
+" TODO: Figure out what special characters to disallow on Windows.
+
 " Splits the command line, respecting escaping.
 " This is an inherently flawed way of doing this,
 " since it should really be done by the shell that will handle the command.
@@ -56,6 +59,12 @@ function! shell_complete#CompleteCommand(partialCommand)
     let baseFiles = map(executables, 'split(v:val, s:path.pathsep)[-1]')
     return sort(shell_complete#Unique(baseFiles))
   endif
+endfunction
+
+function! shell_complete#CompleteFilename(partialFilename)
+  let expr = shell_complete#AppendStar(a:partialFilename)
+  let matchedFiles = split(glob(expr))
+  return matchedFiles
 endfunction
 
 function! shell_complete#Complete(argLead, cmdLine, cursorPos)
