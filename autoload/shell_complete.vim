@@ -8,6 +8,8 @@
 " TODO: Find out how escaping should work on Windows.
 " TODO: Figure out what special characters to disallow on Windows.
 
+let s:path = g:path#path
+
 " Splits the command line, respecting escaping.
 " This is an inherently flawed way of doing this,
 " since it should really be done by the shell that will handle the command.
@@ -64,20 +66,41 @@ endfunction
 function! shell_complete#CompleteFilename(partialFilename)
   let expr = shell_complete#AppendStar(a:partialFilename)
   let matchedFiles = split(glob(expr), "\n")
-  let path = g:path#path
   " Append a closing path separator to directories.
   let withsep =  map(matchedFiles,
-        \            'path.Join([v:val] + (isdirectory(v:val) ? [""] : []))')
+        \            's:path.Join([v:val] + (isdirectory(v:val) ? [""] : []))')
   return sort(withsep)
 endfunction
 
-function! shell_complete#Complete(argLead, cmdLine, cursorPos)
-  let partial = a:cmdLine[0 : a:cursorPos - 1]
-  let partialArgs = shell_complete#SplitArgs(partial)
-  if len(partialArgs) == 0 ||
-        \ (len(partialArgs) == 1 && a:cmdLine[a:cursorPos] =~ '\S')
-    return shell_complete#CompleteCommand(a:argLead)
+" Completes a shell command.
+" a:shellCommand is the portion of the shell command before the cursor.
+" The command is split along unescaped spaces into arguments.
+" Backslashes are stripped from escaped spaces.
+" The last argument is completed.
+function! shell_complete#Complete(shellCommand)
+  let args = shell_complete#SplitArgs(a:shellCommand)
+  if len(args) == 0 ||
+        \ (len(args) == 1 && (a:shellCommand =~ '\S$'))
+    return shell_complete#CompleteCommand(args[-1])
   else
-    return shell_complete#CompleteFilename(a:argLead)
+    let lastArg = (a:shellCommand =~ '\S$') ? args[-1] : ''
+    return shell_complete#CompleteFilename(lastArg)
   endif
+endfunction
+
+" Function usable as the parameter of -complete=customlist.
+" Passes the shell command which precedes the cursor to Complete.
+" The initial part of the command line (the Ex command) is dropped.
+" Spaces in results are escaped by prefixing them with a backslash.
+" Backslashes are similarly escaped.
+" TODO: Maybe add support for shell-style quoting.
+" TODO: Do completion via shell forking if/when possible.
+function! shell_complete#CustomListComplete(argLead, cmdLine, cursorPos)
+  let partial = a:cmdLine[0 : a:cursorPos - 1]
+  let shellCommand = substitute(partial, '^\S\+\s\+', '', '')
+  let names = shell_complete#Complete(shellCommand)
+  " TODO: It may be necessary to escape other characters
+  "       in a filesystem-specific way.
+  call map(names, 'escape(v:val, ''\ '')')
+  return names
 endfunction
