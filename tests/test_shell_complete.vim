@@ -3,6 +3,10 @@
 
 UTSuite 'Test various aspects of the shell_complete addon.'
 
+" TODO: Figure out the right way to communicate
+"       dependency on the testutils addon for testing only.
+ActivateAddons testutils
+
 function! s:TestAppendStar()
   Comment 'Test the appending of wildcards.'
   Assert shell_complete#AppendStar('') == '*'
@@ -47,24 +51,28 @@ endfunction
 
 " Complete a:partialFilename after creating the List of a:files in a temp dir.
 " Clobbers the previous current directory.
-function! s:CompleteFilenameInTestDir(partialFilename, filespec)
+" TODO: Be robust against failures when changing directory
+"       or creating the directory structure.
+function! s:CompleteFilenameInTestDir(partialFilename, filespec) abort
   let testdir = tempname()
   call mkdir(testdir)
   try
-    let original_wd = getcwd()
+    let original_dir = getcwd()
     exec 'cd' fnameescape(testdir)
     try
       call testutils#CreateDirectoryStructure(a:filespec)
-      return shell_complete#CompleteFilename(a:partialFilename)
+      try
+        " return shell_complete#CompleteFilename(a:partialFilename)
+        let ret = shell_complete#CompleteFilename(a:partialFilename)
+        return ret
+      finally
+        call testutils#RemoveDirectoryStructure(a:filespec)
+      endtry
     finally
-      call testutils#RemoveDirectoryStructure(a:filespec)
-      for file in glob('*')
-        call delete(file)
-      endfor
-      exec 'cd' fnameescape(original_wd)
+      exec 'cd' fnameescape(original_dir)
     endtry
   finally
-    call path#path.Rmdir(tempfile)
+    call g:path#path.Rmdir(testdir)
   endtry
 endfunction
 
@@ -88,23 +96,23 @@ function! s:TestCompleteFilename()
         \   'c': [],
         \   'cc': [] } }
 
-  let root_filenames = ['a', 'a b', 'a c', path.Join(['ad', ''])]
-  let ad_filenames = map(keys(contents.ad),
-        \                'path.Join(["ad", v:val])')
-  let adb_filenames = [path.Join('ad', 'b')]
-  let adc_filenames = map(['c', 'cc'], 'path.Join(["ad", v:val])')
+  let root_filenames = sort(['a', 'a b', 'a c', path.Join(['ad', ''])])
+  let ad_filenames = sort(map(keys(contents.ad),
+        \                     'path.Join(["ad", v:val])'))
+  let adb_filenames = [path.Join(['ad', 'b'])]
+  let adc_filenames = sort(map(['c', 'cc'], 'path.Join(["ad", v:val])'))
 
-  let all = root_filenames + ad_filenames
+  let all = sort(root_filenames + ad_filenames)
 
   Assert Complete('', contents) == root_filenames
   Assert Complete('*', contents) == root_filenames
   Assert Complete('a', contents) == root_filenames
   Assert Complete('a*', contents) == root_filenames
-  Assert Complete('a ', contents) == ['a b', 'a c']
+  Assert Complete('a ', contents) == sort(['a b', 'a c'])
   Assert Complete('a b', contents) == ['a b']
   Assert Complete('a b*', contents) == ['a b']
   Assert Complete('ad', contents) == [path.Join(['ad', ''])]
-  Assert Complete('ad' + sep, contents) == ad_filenames
+  Assert Complete(path.Join(['ad', '']), contents) == ad_filenames
   Assert Complete(path.Join(['ad', 'b']), contents) == adb_filenames
   Assert Complete(path.Join(['ad', 'c']), contents) == adc_filenames
   Assert Complete('**', contents) == all

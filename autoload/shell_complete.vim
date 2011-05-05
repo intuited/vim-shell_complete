@@ -63,8 +63,12 @@ endfunction
 
 function! shell_complete#CompleteFilename(partialFilename)
   let expr = shell_complete#AppendStar(a:partialFilename)
-  let matchedFiles = split(glob(expr))
-  return matchedFiles
+  let matchedFiles = split(glob(expr), "\n")
+  let path = g:path#path
+  " Append a closing path separator to directories.
+  let withsep =  map(matchedFiles,
+        \            'path.Join([v:val] + (isdirectory(v:val) ? [""] : []))')
+  return sort(withsep)
 endfunction
 
 function! shell_complete#Complete(argLead, cmdLine, cursorPos)
