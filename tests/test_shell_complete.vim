@@ -72,7 +72,7 @@ function! s:CompleteFilenameInTestDir(partialFilename, filespec) abort
       exec 'cd' fnameescape(original_dir)
     endtry
   finally
-    call g:path#path.Rmdir(testdir)
+    call g:tt#path#path.Rmdir(testdir)
   endtry
 endfunction
 
@@ -82,7 +82,7 @@ endfunction
 function! s:TestCompleteFilename()
   Comment 'Test filename completion using the actual filesystem.'
 
-  let path = g:path#path
+  let path = g:tt#path#path
   let sep = path.pathsep
 
   let Complete = function('s:CompleteFilenameInTestDir')

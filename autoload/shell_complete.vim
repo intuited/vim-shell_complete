@@ -8,7 +8,7 @@
 " TODO: Find out how escaping should work on Windows.
 " TODO: Figure out what special characters to disallow on Windows.
 
-let s:path = g:path#path
+let s:path = g:tt#path#path
 
 " Splits the command line, respecting escaping.
 " This is an inherently flawed way of doing this,
@@ -21,8 +21,8 @@ let s:path = g:path#path
 " Return: a List of the arguments in the String a:line.
 function! shell_complete#SplitArgs(line)
   " Split at any series of spaces not preceded by an uneven number of \'s
-  let args = escape#SplitOnUnescaped(a:line, '\s\+')
-  return map(args, 'escape#Unescape(v:val, '' \t'')')
+  let args = tt#escape#SplitOnUnescaped(a:line, '\s\+')
+  return map(args, 'tt#escape#Unescape(v:val, '' \t'')')
 endfunction
 
 
@@ -31,7 +31,7 @@ endfunction
 function! shell_complete#AppendStar(expr)
   if len(a:expr) == 0
     return '*'
-  elseif a:expr !~ g:escape#unescaped . '\*$'
+  elseif a:expr !~ g:tt#escape#unescaped . '\*$'
     return a:expr . '*'
   else
     return a:expr
