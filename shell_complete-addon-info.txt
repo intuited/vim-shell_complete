@@ -3,11 +3,11 @@
   "author": "Ted Tibbetts",
   "description": "Provides completion functions which complete in a manner similar to |:!|.",
   "dependencies": {
-    "path": {
+    "tt_path": {
       "type": "git",
       "url": "http://github.com/intuited/vim-path.git"
     },
-    "escape": {
+    "tt_escape": {
       "type": "git",
       "url": "http://github.com/intuited/vim-escape.git"
     }
