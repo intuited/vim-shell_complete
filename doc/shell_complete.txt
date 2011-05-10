@@ -1,0 +1,19 @@
+*shell_complete.txt*  Shell-like completion for user commands
+
+USAGE                                             *shell_complete-usage*
+
+You will typically use shell_complete
+to provide custom command completion |:command-completion-customlist|.
+
+To do so, declare the command thusly: >
+    command! -complete=customlist,shell_complete#CustomListComplete Foo
+<
+
+shell_complete also exports various other functions which may be useful.
+For example, shell_complete#Complete can do completion in the same way
+as the list completion function, but more directly.
+shell_complete#Complete also does not escape spaces in its results.
+
+Other functions can be used to complete commands or filenames specifically,
+or to achieve various lower-level goals.
+See the source code in `autoload/shell_complete.vim` for details.
